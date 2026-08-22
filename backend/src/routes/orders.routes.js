@@ -1,0 +1,4 @@
+import { Router } from 'express';
+import { authenticate, allowRoles } from '../middleware/auth.js';
+import { buyerAccept, buyerReject, createOrder, farmerAccept, farmerReject, listOrders, shareBuyerLocation, shareFarmerLocation } from '../controllers/orders.controller.js';
+const router = Router(); router.use(authenticate); router.get('/', listOrders); router.post('/', allowRoles('BUYER'), createOrder); router.put('/:id/accept', allowRoles('FARMER'), farmerAccept); router.put('/:id/reject', allowRoles('FARMER'), farmerReject); router.put('/:id/location', allowRoles('FARMER'), shareFarmerLocation); router.put('/:id/buyer-location', allowRoles('BUYER'), shareBuyerLocation); router.put('/:id/buyer-accept', allowRoles('BUYER'), buyerAccept); router.put('/:id/buyer-reject', allowRoles('BUYER'), buyerReject); export default router;

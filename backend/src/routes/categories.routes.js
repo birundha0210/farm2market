@@ -1,0 +1,2 @@
+import { Router } from 'express'; import { body } from 'express-validator'; import { addCategory, listCategories } from '../controllers/categories.controller.js'; import { authenticate, allowRoles } from '../middleware/auth.js';
+const router = Router(); router.get('/', authenticate, listCategories); router.post('/', authenticate, allowRoles('ADMIN'), body('name').trim().notEmpty(), addCategory); export default router;

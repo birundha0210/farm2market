@@ -1,0 +1,12 @@
+import { Router } from 'express';
+import { body } from 'express-validator';
+import { createProduct, getProduct, listProducts, removeProduct, updateProduct } from '../controllers/products.controller.js';
+import { authenticate, allowRoles } from '../middleware/auth.js';
+import { upload } from '../middleware/upload.js';
+const router = Router();
+const validate = [body('name').trim().isLength({ min: 2 }), body('categoryId').trim().notEmpty(), body('quantityKg').isInt({ min: 50 }), body('pricePerKg').isFloat({ gt: 0 })];
+router.get('/', authenticate, listProducts); router.get('/:id', authenticate, getProduct);
+router.post('/', authenticate, allowRoles('FARMER'), upload.single('image'), validate, createProduct);
+router.put('/:id', authenticate, allowRoles('FARMER'), upload.single('image'), updateProduct);
+router.delete('/:id', authenticate, allowRoles('FARMER'), removeProduct);
+export default router;

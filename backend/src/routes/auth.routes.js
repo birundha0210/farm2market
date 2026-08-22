@@ -1,0 +1,11 @@
+import { Router } from 'express';
+import { body } from 'express-validator';
+import { login, me, register } from '../controllers/auth.controller.js';
+import { authenticate } from '../middleware/auth.js';
+const router = Router();
+const common = [body('name').trim().isLength({ min: 2 }), body('email').isEmail().normalizeEmail(), body('username').trim().isLength({ min: 3 }).matches(/^[a-zA-Z0-9_]+$/), body('password').isStrongPassword({ minLength: 8, minLowercase: 1, minUppercase: 1, minNumbers: 1, minSymbols: 0 }), body('dob').isISO8601(), body('gender').trim().notEmpty()];
+router.post('/register/farmer', [...common, body('landDetails').trim().isLength({ min: 2 }), body('landAcres').isFloat({ gt: 0 })], register);
+router.post('/register/buyer', [...common, body('shopNumber').trim().isLength({ min: 1 }), body('businessType').isIn(['SUPER_MARKET', 'MINI_MARKET', 'VEGETABLE_SHOP'])], register);
+router.post('/login', [body('email').isEmail(), body('loginCode').trim().notEmpty()], login);
+router.get('/me', authenticate, me);
+export default router;
