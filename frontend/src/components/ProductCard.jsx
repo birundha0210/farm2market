@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 
 export default function ProductCard({
@@ -35,6 +35,17 @@ export default function ProductCard({
     0;
 
   const status = product.status || 'AVAILABLE';
+  const imageUrl =
+    typeof product.imageUrl === 'string'
+      ? product.imageUrl.trim()
+      : '';
+  const [showImage, setShowImage] = useState(Boolean(imageUrl));
+
+  useEffect(() => {
+    setShowImage(Boolean(imageUrl));
+  }, [imageUrl]);
+
+  if (!showImage || !imageUrl) return null;
 
   return (
     <motion.article
@@ -50,10 +61,11 @@ export default function ProductCard({
         className="product-image"
         onClick={() => onSelect?.(product)}
       >
-        {product.imageUrl ? (
+        {imageUrl ? (
           <img
-            src={product.imageUrl}
+            src={imageUrl}
             alt={product.name || 'Farm product'}
+            onError={() => setShowImage(false)}
           />
         ) : (
           <span>🌿</span>

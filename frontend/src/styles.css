@@ -3330,6 +3330,110 @@ main {
   transform: translateY(0);
 }
 
+/* Order placement confirmation */
+.order-success-modal {
+  width: min(460px, 100%);
+  overflow: visible;
+  text-align: center;
+}
+
+.order-success-modal h2 {
+  margin: 12px 0;
+  padding: 0;
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: clamp(27px, 5vw, 34px);
+}
+
+.order-success-modal p {
+  margin: 0 0 24px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.order-success-icon {
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 18px;
+  border-radius: 50%;
+  background: var(--green-100);
+  color: var(--green-800);
+  font-size: 34px;
+  font-weight: 800;
+}
+
+.order-success-modal,
+.remove-confirmation-modal {
+  animation: modal-confirmation-in 0.2s ease-out;
+}
+
+.remove-confirmation-modal {
+  width: min(430px, 100%);
+  overflow: visible;
+  text-align: center;
+}
+
+.remove-confirmation-modal h2 {
+  margin: 14px 0 10px;
+  padding: 0;
+  font-family: "Playfair Display", Georgia, serif;
+}
+
+.remove-confirmation-modal > p {
+  margin: 0 0 22px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.remove-warning-icon {
+  width: 62px;
+  height: 62px;
+  display: grid;
+  place-items: center;
+  margin: 0 auto;
+  border-radius: 50%;
+  background: #fff0ef;
+  color: #b63c35;
+  font-size: 32px;
+  font-weight: 800;
+}
+
+.remove-confirmation-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+.remove-confirmation-actions button {
+  min-height: 42px;
+  padding: 9px 16px;
+}
+
+.remove-confirm-button {
+  border-color: #d86159;
+  background: #b63c35;
+  color: #ffffff;
+}
+
+.remove-confirm-button:hover:not(:disabled) {
+  border-color: #962d28;
+  background: #962d28;
+  color: #ffffff;
+}
+
+@keyframes modal-confirmation-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 /* =========================================================
    MOBILE
 ========================================================= */

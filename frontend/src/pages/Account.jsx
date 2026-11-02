@@ -209,7 +209,7 @@ export function Profile() {
               className="button"
               onClick={() => setShowProjectForm(true)}
             >
-              + Add Project
+              + Add Product
             </button>
           </section>
 

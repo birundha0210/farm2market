@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 
 import api from "../services/api";
@@ -35,16 +35,19 @@ export function DashboardHome() {
   const [orders, setOrders] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [chosen, setChosen] = useState(null);
+  const [orderPlaced, setOrderPlaced] = useState(false);
+  const [productToRemove, setProductToRemove] = useState(null);
+  const [removingProduct, setRemovingProduct] = useState(false);
+  const [removeError, setRemoveError] = useState("");
+  const [actionSuccess, setActionSuccess] = useState(null);
+  const removalInFlight = useRef(false);
 
   const isFarmer = user?.role === "FARMER";
 
-  useEffect(() => {
-    loadDashboard();
-  }, []);
-
-  const loadDashboard = async () => {
+  const loadDashboard = useCallback(async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
 
       const requests = [
         api.get("/products"),
@@ -83,9 +86,31 @@ export function DashboardHome() {
         error
       );
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!user?.id) return;
+
+    loadDashboard();
+
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") {
+        loadDashboard(true);
+      }
+    };
+    const refreshTimer = window.setInterval(() => loadDashboard(true), 15000);
+
+    window.addEventListener("focus", refreshWhenVisible);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+
+    return () => {
+      window.clearInterval(refreshTimer);
+      window.removeEventListener("focus", refreshWhenVisible);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
+  }, [loadDashboard, user?.id]);
 
   const myProducts = useMemo(() => {
     if (!isFarmer) return [];
@@ -106,23 +131,36 @@ export function DashboardHome() {
   const removeProduct = async (product) => {
     if (!isFarmer || !isMyProduct(product)) return;
 
-    const confirmed = window.confirm(
-      "Are you sure you want to remove this product?"
-    );
+    setRemoveError("");
+    setProductToRemove(product);
+  };
 
-    if (!confirmed) return;
+  const confirmRemoveProduct = async () => {
+    if (!productToRemove || removalInFlight.current) return;
+
+    removalInFlight.current = true;
+    setRemovingProduct(true);
+    setRemoveError("");
 
     try {
-      await api.delete(`/products/${product.id}`);
+      await api.delete(`/products/${productToRemove.id}`);
       setProducts((current) =>
-        current.filter((item) => item.id !== product.id)
+        current.filter((item) => item.id !== productToRemove.id)
       );
+      setProductToRemove(null);
+      setActionSuccess({
+        title: "Product Removed Successfully!",
+        message: "Your product has been removed successfully.",
+      });
     } catch (error) {
       console.error("Product removal error:", error);
-      window.alert(
+      setRemoveError(
         error.response?.data?.message ||
           "Could not remove this product. Please try again."
       );
+    } finally {
+      removalInFlight.current = false;
+      setRemovingProduct(false);
     }
   };
 
@@ -523,6 +561,7 @@ export function DashboardHome() {
                     product={product}
                     own={isFarmer && isMyProduct(product)}
                     showQuantityLabel={isFarmer}
+                    onSelect={setChosen}
                     onRemove={
                       isFarmer && isMyProduct(product)
                         ? removeProduct
@@ -627,6 +666,44 @@ export function DashboardHome() {
           </section>
         )}
 
+        {chosen && (
+          <ProductModal
+            product={chosen}
+            close={() => setChosen(null)}
+            refresh={() => loadDashboard(true)}
+            onOrderPlaced={() => setOrderPlaced(true)}
+          />
+        )}
+
+        {orderPlaced && (
+          <SuccessModal
+            title="Order Placed Successfully!"
+            message="Your order has been submitted successfully. The farmer will review your order shortly."
+            close={() => setOrderPlaced(false)}
+          />
+        )}
+
+        {productToRemove && (
+          <DeleteProductModal
+            close={() => {
+              if (!removingProduct) {
+                setProductToRemove(null);
+                setRemoveError("");
+              }
+            }}
+            error={removeError}
+            removing={removingProduct}
+            remove={confirmRemoveProduct}
+          />
+        )}
+
+        {actionSuccess && (
+          <SuccessModal
+            {...actionSuccess}
+            close={() => setActionSuccess(null)}
+          />
+        )}
+
       </section>
     </main>
   );
@@ -653,6 +730,12 @@ export function Market({ farmerOnly = false }) {
   const [chosen, setChosen] = useState(null);
   const [edit, setEdit] = useState(null);
   const [add, setAdd] = useState(false);
+  const [orderPlaced, setOrderPlaced] = useState(false);
+  const [productToRemove, setProductToRemove] = useState(null);
+  const [removingProduct, setRemovingProduct] = useState(false);
+  const [removeError, setRemoveError] = useState("");
+  const [actionSuccess, setActionSuccess] = useState(null);
+  const removalInFlight = useRef(false);
 
   const isFarmer = user?.role === "FARMER";
 
@@ -727,8 +810,11 @@ export function Market({ farmerOnly = false }) {
     };
 
     loadCategories();
-    fetchProducts();
   }, []);
+
+  useEffect(() => {
+    if (user?.id) fetchProducts();
+  }, [farmerOnly, user?.id]);
 
   const change = (event) => {
     setFilters({
@@ -740,23 +826,36 @@ export function Market({ farmerOnly = false }) {
   const removeProduct = async (product) => {
     if (!isFarmer || !isMyProduct(product)) return;
 
-    const confirmed = window.confirm(
-      "Are you sure you want to remove this product?"
-    );
+    setRemoveError("");
+    setProductToRemove(product);
+  };
 
-    if (!confirmed) return;
+  const confirmRemoveProduct = async () => {
+    if (!productToRemove || removalInFlight.current) return;
+
+    removalInFlight.current = true;
+    setRemovingProduct(true);
+    setRemoveError("");
 
     try {
-      await api.delete(`/products/${product.id}`);
+      await api.delete(`/products/${productToRemove.id}`);
       setProducts((current) =>
-        current.filter((item) => item.id !== product.id)
+        current.filter((item) => item.id !== productToRemove.id)
       );
+      setProductToRemove(null);
+      setActionSuccess({
+        title: "Product Removed Successfully!",
+        message: "Your product has been removed successfully.",
+      });
     } catch (error) {
       console.error("Product removal error:", error);
-      window.alert(
+      setRemoveError(
         error.response?.data?.message ||
           "Could not remove this product. Please try again."
       );
+    } finally {
+      removalInFlight.current = false;
+      setRemovingProduct(false);
     }
   };
 
@@ -907,6 +1006,7 @@ export function Market({ farmerOnly = false }) {
           product={chosen}
           close={() => setChosen(null)}
           refresh={fetchProducts}
+          onOrderPlaced={() => setOrderPlaced(true)}
         />
       )}
 
@@ -917,6 +1017,12 @@ export function Market({ farmerOnly = false }) {
           product={edit}
           close={() => setEdit(null)}
           refresh={fetchProducts}
+          onPriceUpdated={() =>
+            setActionSuccess({
+              title: "Price Updated Successfully!",
+              message: "Your product price has been updated successfully.",
+            })
+          }
         />
       )}
 
@@ -927,6 +1033,41 @@ export function Market({ farmerOnly = false }) {
           categories={categories}
           close={() => setAdd(false)}
           refresh={fetchProducts}
+          onProductAdded={() =>
+            setActionSuccess({
+              title: "Product Added Successfully!",
+              message: "Your product has been added to the marketplace successfully.",
+            })
+          }
+        />
+      )}
+
+      {orderPlaced && (
+        <SuccessModal
+          title="Order Placed Successfully!"
+          message="Your order has been submitted successfully. The farmer will review your order shortly."
+          close={() => setOrderPlaced(false)}
+        />
+      )}
+
+      {productToRemove && (
+        <DeleteProductModal
+          close={() => {
+            if (!removingProduct) {
+              setProductToRemove(null);
+              setRemoveError("");
+            }
+          }}
+          error={removeError}
+          removing={removingProduct}
+          remove={confirmRemoveProduct}
+        />
+      )}
+
+      {actionSuccess && (
+        <SuccessModal
+          {...actionSuccess}
+          close={() => setActionSuccess(null)}
         />
       )}
 
@@ -942,12 +1083,14 @@ function ProductModal({
   product,
   close,
   refresh,
+  onOrderPlaced,
 }) {
   const { user } = useAuth();
 
   const [qty, setQty] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const orderInFlight = useRef(false);
 
   const isBuyer = user?.role === "BUYER";
 
@@ -971,6 +1114,8 @@ function ProductModal({
     pricePerKg;
 
   const order = async () => {
+
+    if (orderInFlight.current) return;
 
     if (!qty) {
       setError(
@@ -996,6 +1141,7 @@ function ProductModal({
       return;
     }
 
+    orderInFlight.current = true;
     setSaving(true);
 
     try {
@@ -1006,13 +1152,12 @@ function ProductModal({
       });
 
       close();
-      refresh();
-
-      alert(
-        "Order placed. The farmer will review it shortly."
-      );
+      onOrderPlaced?.();
+      void refresh?.();
 
     } catch (error) {
+
+      orderInFlight.current = false;
 
       setError(
         error.response?.data?.message ||
@@ -1148,6 +1293,65 @@ function ProductModal({
   );
 }
 
+function SuccessModal({ title, message, close }) {
+  return (
+    <div className="modal-backdrop order-success-backdrop" role="presentation">
+      <section
+        className="modal order-success-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="order-success-title"
+      >
+        <div className="order-success-icon" aria-hidden="true">✓</div>
+        <div className="eyebrow green">SUCCESS</div>
+        <h2 id="order-success-title">{title}</h2>
+        <p>{message}</p>
+        <button className="button full" type="button" onClick={close}>
+          Continue
+        </button>
+      </section>
+    </div>
+  );
+}
+
+function DeleteProductModal({ close, error, removing, remove }) {
+  return (
+    <div className="modal-backdrop" role="presentation">
+      <section
+        className="modal remove-confirmation-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="remove-product-title"
+      >
+        <div className="remove-warning-icon" aria-hidden="true">!</div>
+        <h2 id="remove-product-title">Remove Product?</h2>
+        <p>Are you sure you want to remove this product?</p>
+
+        {error && <div className="form-error">{error}</div>}
+
+        <div className="remove-confirmation-actions">
+          <button
+            className="small-button secondary"
+            type="button"
+            disabled={removing}
+            onClick={close}
+          >
+            Cancel
+          </button>
+          <button
+            className="remove-product-button remove-confirm-button"
+            type="button"
+            disabled={removing}
+            onClick={remove}
+          >
+            {removing ? "Removing productâ€¦" : "Remove Product"}
+          </button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
 /* =========================================================
    ADD PRODUCT
 ========================================================= */
@@ -1156,6 +1360,7 @@ function AddModal({
   categories,
   close,
   refresh,
+  onProductAdded,
 }) {
   const [form, setForm] =
     useState({
@@ -1175,9 +1380,16 @@ function AddModal({
   const [error, setError] =
     useState("");
 
+  const [saving, setSaving] =
+    useState(false);
+
+  const submissionInFlight = useRef(false);
+
   const submit = async (event) => {
 
     event.preventDefault();
+
+    if (submissionInFlight.current) return;
 
     if (
       Number(form.quantityKg) < 50
@@ -1216,6 +1428,9 @@ function AddModal({
       );
     }
 
+    submissionInFlight.current = true;
+    setSaving(true);
+
     try {
 
       await api.post(
@@ -1223,15 +1438,20 @@ function AddModal({
         data
       );
 
+      await refresh?.();
       close();
-      refresh();
+      onProductAdded?.();
 
     } catch (error) {
+
+      submissionInFlight.current = false;
 
       setError(
         error.response?.data?.message ||
           "Could not add product."
       );
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -1404,8 +1624,9 @@ function AddModal({
         <button
           className="button full"
           type="submit"
+          disabled={saving}
         >
-          Upload / add product
+          {saving ? "Adding productâ€¦" : "Upload / add product"}
         </button>
 
       </form>
@@ -1421,6 +1642,7 @@ function EditModal({
   product,
   close,
   refresh,
+  onPriceUpdated,
 }) {
   const [price, setPrice] =
     useState(
@@ -1432,7 +1654,14 @@ function EditModal({
   const [error, setError] =
     useState("");
 
+  const [saving, setSaving] =
+    useState(false);
+
+  const updateInFlight = useRef(false);
+
   const save = async () => {
+
+    if (updateInFlight.current) return;
 
     if (
       !price ||
@@ -1444,6 +1673,9 @@ function EditModal({
       return;
     }
 
+    updateInFlight.current = true;
+    setSaving(true);
+
     try {
 
       await api.put(
@@ -1454,15 +1686,20 @@ function EditModal({
         }
       );
 
+      await refresh?.();
       close();
-      refresh();
+      onPriceUpdated?.();
 
     } catch (error) {
+
+      updateInFlight.current = false;
 
       setError(
         error.response?.data?.message ||
           "Could not update price."
       );
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -1507,8 +1744,9 @@ function EditModal({
         <button
           className="button full"
           onClick={save}
+          disabled={saving}
         >
-          Save price
+          {saving ? "Saving priceâ€¦" : "Save price"}
         </button>
 
       </section>

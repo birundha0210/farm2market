@@ -250,7 +250,7 @@ function RoleLogin({ roleName }) {
         />
         <Field
           label="Farm2Market code"
-          placeholder="FM-XXXXXXXX"
+          placeholder={roleName === "Buyer" ? "BUY-XXXXXXXXX" : "FM-XXXXXXXX"}
           value={loginCode}
           onChange={(e) => setCode(e.target.value.toUpperCase())}
           required
