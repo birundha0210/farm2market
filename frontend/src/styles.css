@@ -3481,19 +3481,31 @@ main {
 @media (max-width: 768px) {
 
   .dash-nav {
-    height: 65px;
-    padding: 0 18px;
+    height: auto;
+    min-height: 65px;
+    padding: 12px 18px;
     position: sticky;
     top: 0;
     z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
   }
 
+  /* Brand - Left Corner */
+  .dash-nav .brand {
+    align-self: flex-start;
+    margin: 0;
+  }
+
+  /* Hamburger - Below Brand, Left Side */
   .dash-menu-toggle {
     display: flex;
     align-items: center;
     justify-content: center;
     width: 42px;
     height: 42px;
+    margin-top: 10px;
     border: 1px solid var(--border);
     border-radius: 10px;
     background: white;
@@ -3502,10 +3514,11 @@ main {
     cursor: pointer;
   }
 
+  /* Navigation Links */
   .dash-links {
     display: none;
     position: absolute;
-    top: 65px;
+    top: 100%;
     left: 0;
     right: 0;
     flex-direction: column;
