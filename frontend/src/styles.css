@@ -3480,32 +3480,30 @@ main {
 
 @media (max-width: 768px) {
 
+  /* Dashboard Navbar */
   .dash-nav {
-    height: auto;
-    min-height: 65px;
-    padding: 12px 18px;
+    height: 65px;
+    padding: 0 18px;
     position: sticky;
     top: 0;
     z-index: 100;
     display: flex;
-    flex-direction: column;
-    align-items: flex-start;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 16px;
   }
 
-  /* Brand - Left Corner */
-  .dash-nav .brand {
-    align-self: flex-start;
-    margin: 0;
-  }
-
-  /* Hamburger - Below Brand, Left Side */
+  /* Hamburger Menu - Left Side */
   .dash-menu-toggle {
     display: flex;
     align-items: center;
     justify-content: center;
+    order: 1;
+    flex-shrink: 0;
     width: 42px;
     height: 42px;
-    margin-top: 10px;
+    margin: 0;
     border: 1px solid var(--border);
     border-radius: 10px;
     background: white;
@@ -3514,11 +3512,20 @@ main {
     cursor: pointer;
   }
 
-  /* Navigation Links */
+  /* Brand - Right Side of Hamburger */
+  .dash-nav .brand {
+    order: 2;
+    margin: 0;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+  }
+
+  /* Navigation Links - Hidden Initially */
   .dash-links {
     display: none;
     position: absolute;
-    top: 100%;
+    top: 65px;
     left: 0;
     right: 0;
     flex-direction: column;
@@ -3530,10 +3537,12 @@ main {
     box-shadow: 0 12px 20px rgba(0, 0, 0, 0.08);
   }
 
+  /* Show Links When Hamburger Clicked */
   .dash-links.open {
     display: flex;
   }
 
+  /* Navigation Link Styling */
   .dash-links a,
   .dash-links .text-button {
     width: 100%;
@@ -3542,4 +3551,5 @@ main {
     border-radius: 9px;
     font-size: 14px;
   }
+
 }
