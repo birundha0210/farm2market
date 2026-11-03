@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Link,
   NavLink,
@@ -23,10 +23,7 @@ export function PublicNav() {
       <div>
         <Link to="/login">Login</Link>
 
-        <Link
-          className="nav-register"
-          to="/register"
-        >
+        <Link className="nav-register" to="/register">
           Register
         </Link>
       </div>
@@ -37,6 +34,8 @@ export function PublicNav() {
 export function DashNav() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const base = `/${user.role.toLowerCase()}`;
 
@@ -58,15 +57,30 @@ export function DashNav() {
           ["Profile", "profile"],
         ];
 
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+  };
+
   return (
     <nav className="dash-nav">
       <Brand />
 
-      <div className="dash-links">
+      <button
+        className="dash-menu-toggle"
+        onClick={() => setMenuOpen(!menuOpen)}
+        aria-label="Toggle navigation menu"
+        aria-expanded={menuOpen}
+      >
+        {menuOpen ? "✕" : "☰"}
+      </button>
+
+      <div className={`dash-links ${menuOpen ? "open" : ""}`}>
         {links.map(([label, path]) => (
           <NavLink
             key={path}
             to={`${base}/${path}`}
+            onClick={() => setMenuOpen(false)}
           >
             {label}
           </NavLink>
@@ -74,10 +88,7 @@ export function DashNav() {
 
         <button
           className="text-button"
-          onClick={() => {
-            logout();
-            navigate("/");
-          }}
+          onClick={handleLogout}
         >
           Logout
         </button>

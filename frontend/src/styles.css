@@ -3470,3 +3470,63 @@ main {
     min-height: 150px;
   }
 }
+/* =========================================
+   MOBILE DASHBOARD NAVBAR
+   ========================================= */
+
+.dash-menu-toggle {
+  display: none;
+}
+
+@media (max-width: 768px) {
+
+  .dash-nav {
+    height: 65px;
+    padding: 0 18px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .dash-menu-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: white;
+    color: var(--green-900);
+    font-size: 23px;
+    cursor: pointer;
+  }
+
+  .dash-links {
+    display: none;
+    position: absolute;
+    top: 65px;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 5px;
+    padding: 15px 18px 20px;
+    background: white;
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 12px 20px rgba(0, 0, 0, 0.08);
+  }
+
+  .dash-links.open {
+    display: flex;
+  }
+
+  .dash-links a,
+  .dash-links .text-button {
+    width: 100%;
+    padding: 13px 15px;
+    text-align: left;
+    border-radius: 9px;
+    font-size: 14px;
+  }
+}
